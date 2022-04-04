@@ -1,1 +1,1 @@
-Learning about C - static libraries.
+Learning about c static libraries.
