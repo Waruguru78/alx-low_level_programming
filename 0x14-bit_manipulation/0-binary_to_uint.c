@@ -2,61 +2,67 @@
 #include "main.h"
 
 /**
- * _strlen - returns length of string (modified)
- * @s: string (const)
- * Return: length of string
- */
+ * _strlen - find the length of a string
+ * @s: pointer to the string to check
+ * Return: void
+*/
 
-int _strlen(const char *s)
+
+int _strlen(char *s)
 {
-	int len = 0;
+int i = 0;
+while (s[i])
+	i++;
 
-	while (s[len] != '\0')
-	{
-		len++;
-	}
-
-	return (len);
+return (i);
 }
+
 
 /**
- * power - exponents
- * @base: base
- * @exp: exponent
- * Return: result (int)
+ * _pow_recursion - Search a string for any of a set of bytes.
+ * @x: base
+ * @y: exposant
+ * Return: Pointer to the byte in `s` that matches one of the bytes in `accept`
+ * or NULL if no such byte is found.
  */
 
-int power(int base, int exp)
+int _pow_recursion(int x, int y)
 {
-	int i, num;
 
-	num = 1;
-	for (i = 0; i < exp; ++i)
-		num *= base;
+if (y < 0)
+	return (-1);
+else if (y == 1)
+	return (x);
+else if (y == 0)
+	return (1);
 
-	return (num);
+return (x * _pow_recursion(x, y - 1));
+
 }
+
 
 /**
  * binary_to_uint - converts a binary number to an unsigned int
- * @b: binary
- * Return: unsigned int
+ * @b: binary number
+ *
+ * Return: 0 or converted number
  */
 
 unsigned int binary_to_uint(const char *b)
 {
-	unsigned int sum;
-	int length, i;
+	unsigned int n = 0;
+	int i, len;
 
-	sum = 0;
 	if (b == NULL)
-		return (sum);
-	length = _strlen(b);
-	for (i = length - 1; i >= 0; i--)
+		return (0);
+	len = _strlen(b);
+	for (i = 0; b[i]; i++)
 	{
-		if (b[i] != '0' && b[i] != '1')
+		if (b[i] == '1')
+			n += _pow_recursion(2, (len - i - 1));
+		else if (b[i] != '0')
 			return (0);
-		sum += (b[i] - '0') * power(2, length - i - 1);
 	}
-	return (sum);
+
+	return (n);
 }
