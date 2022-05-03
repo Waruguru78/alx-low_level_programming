@@ -1,67 +1,52 @@
-#include <stdio.h>
+#include <stdarg.h>
 #include "main.h"
 
-/**
- * error_handler - handles errors for cp
- * @exit_code: exit code
- * @message: error message
- * @type: data type for format
- */
-
-void error_handler(int exit_code, char *message, char type, ...)
-{
-	va_list args;
-
-	va_start(args, type);
-	if (type == 's')
-		dprintf(STDERR_FILENO, message, va_arg(args, char *));
-	else if (type == 'd')
-		dprintf(STDERR_FILENO, message, va_arg(args, int));
-	else if (type == 'N')
-		dprintf(STDERR_FILENO, message, "");
-	else
-		dprintf(STDERR_FILENO, "Error: Does not match any type\n");
-	va_end(args);
-	exit(exit_code);
-}
+#define MAXSIZE 1204
+#define SE STDERR_FILENO
 
 /**
- * main - copies the content of a file to another file
- * @argc: number of arguments
- * @argv: array of arguments
- * Return:  0 (Always)
+ * main - create the copy bash script
+ * @ac: argument count
+ * @av: arguments as strings
+ * Return: 0
  */
-
-int main(int argc, char *argv[])
+int main(int ac, char *av[])
 {
-	char buffer[1024];
-	int fd_s, fd_d;
-	ssize_t bytes_read, bytes_written;
+	int input_fd, output_fd, istatus, ostatus;
+	char buf[MAXSIZE];
+	mode_t mode;
 
-	if (argc != 3)
-		error_handler(97, "Usage: cp file_from file_to\n", 'N');
+	mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
+	if (ac != 3)
+		dprintf(SE, "Usage: cp file_from file_to\n"), exit(97);
+	input_fd = open(av[1], O_RDONLY);
+	if (input_fd == -1)
+		dprintf(SE, "Error: Can't read from file %s\n", av[1]), exit(98);
+	output_fd = open(av[2], O_CREAT | O_WRONLY | O_TRUNC, mode);
+	if (output_fd == -1)
+		dprintf(SE, "Error: Can't write to %s\n", av[2]), exit(99);
 
-	fd_s = open(argv[1], O_RDONLY);
-	if (fd_s == -1)
-		error_handler(98, "Error: Can't read from file %s\n", 's', argv[1]);
+	do {
+		istatus = read(input_fd, buf, MAXSIZE);
+		if (istatus == -1)
+		{
+			dprintf(SE, "Error: Can't read from file %s\n", av[1]);
+			exit(98);
+		}
+		if (istatus > 0)
+		{
+			ostatus = write(output_fd, buf, (ssize_t) istatus);
+			if (ostatus == -1)
+				dprintf(SE, "Error: Can't write to %s\n", av[2]), exit(99);
+		}
+	} while (istatus > 0);
 
-	fd_d = open(argv[2], O_CREAT | O_WRONLY | O_TRUNC, 0664);
-	if (fd_d == -1)
-		error_handler(99, "Error: Can't write to %s\n", 's', argv[2]);
-
-	while ((bytes_read = read(fd_s, buffer, 1024)) > 0)
-	{
-		bytes_written = write(fd_d, buffer, bytes_read);
-		if (bytes_written == -1)
-			error_handler(99, "Error: Can't write to %s\n", 's', argv[2]);
-	}
-
-    if (bytes_read == -1)
-		error_handler(98, "Error: Can't read from file %s\n", 's', argv[1]);
-	if (close(fd_s) == -1)
-		error_handler(100, "Error: Can't close fd %d\n", 'd', fd_s);
-	if (close(fd_d) == -1)
-		error_handler(100, "Error: Can't close fd %d\n", 'd', fd_d);
+	istatus = close(input_fd);
+	if (istatus == -1)
+		dprintf(SE, "Error: Can't close fd %d\n", input_fd), exit(100);
+	ostatus = close(output_fd);
+	if (ostatus == -1)
+		dprintf(SE, "Error: Can't close fd %d\n", output_fd), exit(100);
 
 	return (0);
 }
